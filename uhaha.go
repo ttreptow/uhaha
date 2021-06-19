@@ -47,6 +47,18 @@ import (
 // values as all application operations, logging, and I/O will be forever
 // transferred.
 func Main(conf Config) {
+	log, svr := initServer(conf)
+	log.Fatal(svr.serve())
+}
+
+// Run entry point for the cluster node. Identical to main except that it
+// returns an erorr when the server exits instead of calling os.Exit
+func Run(conf Config) error {
+	_, svr := initServer(conf)
+	return svr.serve()
+}
+
+func initServer(conf Config) (*redlog.Logger, *splitServer) {
 	confInit(&conf)
 	conf.AddService(redisService())
 
@@ -68,8 +80,7 @@ func Main(conf Config) {
 	go runWriteApplier(conf, m, ra)
 	go runLogLoadedPoller(conf, m, ra, tlscfg, log)
 	go runTicker(conf, tm, m, ra, log)
-
-	log.Fatal(svr.serve())
+	return log, svr
 }
 
 const usage = `{{NAME}} version: {{VERSION}} ({{GITSHA}})
